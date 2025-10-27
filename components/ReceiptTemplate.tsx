@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { useLanguage } from '../hooks/useLanguage';
@@ -43,7 +44,7 @@ const ReceiptTemplate: React.FC<ReceiptTemplateProps> = ({ bookings }) => {
                         <p className="text-xs">{language === 'th' ? 'เลขประจำตัวผู้เสียภาษี' : 'Tax ID'}: {hotelInfo.taxId}</p>
                     </div>
                     <div className="text-right">
-                        <img src="assets/logo2.png" alt="Sunriver Logo" className="w-24 h-auto ml-auto mb-2"/>
+                        <img src="/logo2.png" alt="Sunriver Logo" className="w-24 h-auto ml-auto mb-2"/>
                         <h2 className="text-3xl font-bold">{t('receipt.receiptTitle')}</h2>
                     </div>
                 </header>

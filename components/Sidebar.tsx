@@ -9,7 +9,7 @@ interface SidebarProps {
   onLogout: () => void;
 }
 
-const logoSrc = "assets/logo2.png";
+const logoSrc = "/logo2.png";
 
 
 const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onLogout }) => {

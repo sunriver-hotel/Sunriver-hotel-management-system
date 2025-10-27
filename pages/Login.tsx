@@ -7,8 +7,7 @@ interface LoginPageProps {
   onLogin: () => void;
 }
 
-const logoSrc = "assets/logo2.png";
-
+const logoSrc = "/logo2.png";
 
 const LanguageButton: React.FC<{ lang: Language; currentLang: Language; setLang: (lang: Language) => void; flag: string }> = ({ lang, currentLang, setLang, flag }) => (
   <button
