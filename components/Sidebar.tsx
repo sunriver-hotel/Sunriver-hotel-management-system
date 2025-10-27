@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { Page } from '../App';
 import { useLanguage } from '../hooks/useLanguage';
@@ -9,7 +8,7 @@ interface SidebarProps {
   onLogout: () => void;
 }
 
-const logoSrc = "/logo2.png";
+const logoSrc = "/logo.png";
 
 
 const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onLogout }) => {

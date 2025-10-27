@@ -3,7 +3,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import type { Language } from '../types';
 
 // Correctly reference the logo from the public folder as a string path
-const logoSrc = "/logo2.png";
+const logoSrc = "/logo.png";
 
 interface LoginPageProps {
   onLogin: () => void;
