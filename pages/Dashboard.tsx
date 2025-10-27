@@ -1,9 +1,8 @@
-
 import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../hooks/useAppContext';
 import { useLanguage } from '../hooks/useLanguage';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { eachDayOfInterval, format, startOfMonth, endOfMonth, eachMonthOfInterval, startOfYear, endOfYear } from 'date-fns';
+import { eachDayOfInterval, format, startOfMonth, endOfMonth, eachMonthOfInterval, startOfYear, endOfYear, parseISO } from 'date-fns';
 
 type Period = 'daily' | 'monthly' | 'yearly';
 
@@ -18,8 +17,8 @@ const DashboardPage: React.FC = () => {
       const days = eachDayOfInterval({ start: startOfMonth(today), end: endOfMonth(today) });
       return days.map(day => {
         const bookedCount = bookings.filter(b => {
-            const checkIn = new Date(b.checkInDate);
-            const checkOut = new Date(b.checkOutDate);
+            const checkIn = parseISO(b.checkInDate);
+            const checkOut = parseISO(b.checkOutDate);
             return day >= checkIn && day < checkOut;
         }).length;
         return {
@@ -35,8 +34,8 @@ const DashboardPage: React.FC = () => {
           let totalBookedNights = 0;
           daysInMonth.forEach(day => {
             totalBookedNights += bookings.filter(b => {
-                const checkIn = new Date(b.checkInDate);
-                const checkOut = new Date(b.checkOutDate);
+                const checkIn = parseISO(b.checkInDate);
+                const checkOut = parseISO(b.checkOutDate);
                 return day >= checkIn && day < checkOut;
             }).length;
           });
