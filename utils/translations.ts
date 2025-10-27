@@ -3,7 +3,7 @@ import type { Translations } from '../types';
 export const translations: Translations = {
   en: {
     login: {
-      title: 'Sunriver Hotel Login',
+      title: 'Sunriver Hotel',
       username: 'Username',
       password: 'Password',
       loginButton: 'Login',
@@ -128,7 +128,7 @@ export const translations: Translations = {
   },
   th: {
     login: {
-      title: 'ล็อคอิน โรงแรมซันริเวอร์',
+      title: 'โรงแรมซันริเวอร์',
       username: 'ชื่อผู้ใช้',
       password: 'รหัสผ่าน',
       loginButton: 'เข้าสู่ระบบ',

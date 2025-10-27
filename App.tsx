@@ -48,7 +48,7 @@ const App: React.FC = () => {
         {!isAuthenticated ? (
           <LoginPage onLogin={handleLogin} />
         ) : (
-          <div className="flex h-screen bg-pastel-bg text-sunriver-blue">
+          <div className="flex flex-col h-screen bg-pastel-bg text-sunriver-blue">
             <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={handleLogout} />
             <main className="flex-1 p-4 md:p-8 overflow-y-auto">
               {renderPage()}

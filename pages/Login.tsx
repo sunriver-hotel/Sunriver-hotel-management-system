@@ -1,13 +1,13 @@
-
 import React, { useState } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
 import type { Language } from '../types';
 
+// Correctly reference the logo from the public folder as a string path
+const logoSrc = "/logo2.png";
+
 interface LoginPageProps {
   onLogin: () => void;
 }
-
-const logoSrc = "/logo2.png";
 
 const LanguageButton: React.FC<{ lang: Language; currentLang: Language; setLang: (lang: Language) => void; flag: string }> = ({ lang, currentLang, setLang, flag }) => (
   <button

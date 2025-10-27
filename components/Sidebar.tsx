@@ -24,40 +24,45 @@ const Sidebar: React.FC<SidebarProps> = ({ currentPage, setCurrentPage, onLogout
   ];
 
   return (
-    <div className="w-16 md:w-64 bg-sunriver-yellow text-sunriver-blue flex flex-col transition-all duration-300">
-      <div className="flex items-center justify-center md:justify-start p-4 h-20 border-b border-sunriver-blue/20">
-        <img src={logoSrc} alt="Sunriver Hotel Logo" className="h-10 w-10 rounded-full" />
-        <h1 className="hidden md:block text-xl font-bold ml-4 whitespace-nowrap">Sunriver Hotel</h1>
+    <header className="w-full h-20 bg-sunriver-yellow text-sunriver-blue flex items-center justify-between px-4 md:px-8 shadow-lg z-20 shrink-0">
+      {/* Left section: Logo and Title */}
+      <div className="flex items-center">
+        <img src={logoSrc} alt="Sunriver Hotel Logo" className="h-12 w-12 rounded-full object-cover" />
+        <h1 className="hidden md:block text-2xl font-bold ml-4 whitespace-nowrap">Sunriver Hotel</h1>
       </div>
-      <nav className="flex-1 mt-4">
-        <ul>
+
+      {/* Center section: Navigation links */}
+      <nav>
+        <ul className="flex items-center space-x-1 md:space-x-4">
           {navItems.map((item) => (
             <li key={item.page}>
               <button
                 onClick={() => setCurrentPage(item.page)}
-                className={`flex items-center w-full p-4 my-1 transition-colors duration-200 ${
+                className={`flex items-center p-2 md:px-3 md:py-2 rounded-lg transition-colors duration-200 ${
                   currentPage === item.page
                     ? 'bg-sunriver-blue text-white'
                     : 'hover:bg-sunriver-blue/20'
                 }`}
               >
-                <i className={`${item.icon} w-8 text-center text-lg`}></i>
-                <span className="hidden md:inline ml-4 font-medium">{t(item.labelKey)}</span>
+                <i className={`${item.icon} text-lg md:text-base`}></i>
+                <span className="hidden md:inline ml-2 text-sm font-medium">{t(item.labelKey)}</span>
               </button>
             </li>
           ))}
         </ul>
       </nav>
-      <div className="p-4 border-t border-sunriver-blue/20">
+
+      {/* Right section: Logout button */}
+      <div>
         <button
           onClick={onLogout}
-          className="flex items-center w-full p-4 transition-colors duration-200 hover:bg-sunriver-blue/20"
+          className="flex items-center p-2 md:px-3 md:py-2 rounded-lg transition-colors duration-200 hover:bg-sunriver-blue/20"
         >
-          <i className="fas fa-sign-out-alt w-8 text-center text-lg"></i>
-          <span className="hidden md:inline ml-4 font-medium">{t('sidebar.logout')}</span>
+          <i className="fas fa-sign-out-alt text-lg md:text-base"></i>
+          <span className="hidden md:inline ml-2 text-sm font-medium">{t('sidebar.logout')}</span>
         </button>
       </div>
-    </div>
+    </header>
   );
 };
 
