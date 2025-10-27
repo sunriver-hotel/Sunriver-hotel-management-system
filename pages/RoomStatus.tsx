@@ -13,7 +13,7 @@ interface RoomStatusPageProps {
 type SortKey = 'roomNumber' | 'roomType' | 'bedType';
 
 const RoomStatusPage: React.FC<RoomStatusPageProps> = ({ onNavigateToBooking }) => {
-  const { rooms, getRoomStatusForDate } = useAppContext();
+  const { rooms, getRoomStatusForDate, loading, error } = useAppContext();
   const { t } = useLanguage();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [sortKey, setSortKey] = useState<SortKey>('roomNumber');
@@ -70,34 +70,39 @@ const RoomStatusPage: React.FC<RoomStatusPageProps> = ({ onNavigateToBooking }) 
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        {sortedRooms.map((room) => {
-          const status = getRoomStatusForDate(room.id, selectedDate);
-          return (
-            <div
-              key={room.id}
-              className={`p-4 rounded-lg shadow-md text-center flex flex-col justify-between transition-all duration-300 ${
-                status === 'Booked' ? 'bg-pastel-red/50' : 'bg-pastel-green/50'
-              }`}
-            >
-              <div>
-                <p className="text-2xl font-bold text-sunriver-blue">{room.number}</p>
-                <p className="text-sm text-gray-600">{room.type}</p>
-                <p className="text-xs text-gray-500">{room.bedType}</p>
+      {loading && <div className="flex justify-center items-center p-8"><i className="fas fa-spinner fa-spin text-2xl text-sunriver-yellow"></i><span className="ml-2">Loading Rooms...</span></div>}
+      {error && <div className="text-center p-8 text-red-500 bg-red-100 rounded-lg"><strong>Error:</strong> {error}</div>}
+
+      {!loading && !error && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {sortedRooms.map((room) => {
+            const status = getRoomStatusForDate(room.id, selectedDate);
+            return (
+              <div
+                key={room.id}
+                className={`p-4 rounded-lg shadow-md text-center flex flex-col justify-between transition-all duration-300 ${
+                  status === 'Booked' ? 'bg-pastel-red/50' : 'bg-pastel-green/50'
+                }`}
+              >
+                <div>
+                  <p className="text-2xl font-bold text-sunriver-blue">{room.number}</p>
+                  <p className="text-sm text-gray-600">{room.type}</p>
+                  <p className="text-xs text-gray-500">{room.bedType}</p>
+                </div>
+                <div className="mt-4">
+                  {status === 'Vacant' ? (
+                    <button onClick={() => handleBookNow(room.id)} className="bg-green-500 text-white text-sm font-bold py-1 px-3 rounded-full hover:bg-green-600 transition-colors">
+                      {t('roomStatus.bookNow')}
+                    </button>
+                  ) : (
+                    <p className="text-red-700 font-semibold">{t('home.booked')}</p>
+                  )}
+                </div>
               </div>
-              <div className="mt-4">
-                {status === 'Vacant' ? (
-                  <button onClick={() => handleBookNow(room.id)} className="bg-green-500 text-white text-sm font-bold py-1 px-3 rounded-full hover:bg-green-600 transition-colors">
-                    {t('roomStatus.bookNow')}
-                  </button>
-                ) : (
-                  <p className="text-red-700 font-semibold">{t('home.booked')}</p>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {isModalOpen && (
         <BookingForm

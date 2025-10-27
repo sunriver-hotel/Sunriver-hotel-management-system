@@ -12,7 +12,9 @@
     "react-dom": "^19.2.0",
     "react": "^19.2.0",
     "recharts": "^3.3.0",
-    "date-fns": "^4.1.0"
+    "date-fns": "^4.1.0",
+    "@vercel/node": "^5.5.0",
+    "@vercel/postgres": "^0.10.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

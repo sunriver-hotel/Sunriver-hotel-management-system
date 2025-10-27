@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { format, parseISO, isBefore } from 'date-fns';
+import { format, parseISO, isBefore, addDays } from 'date-fns';
 import { useAppContext } from '../hooks/useAppContext';
 import { useLanguage } from '../hooks/useLanguage';
 import type { Booking, BookingStatus } from '../types';
@@ -16,20 +15,29 @@ interface BookingFormProps {
 const BookingForm: React.FC<BookingFormProps> = ({ isOpen, onClose, booking, defaultDate, defaultRoomId }) => {
   const { rooms, bookings, addBooking, updateBooking } = useAppContext();
   const { t } = useLanguage();
-  const [formData, setFormData] = useState({
-    customerName: '',
-    phone: '',
-    email: '',
-    address: '',
-    taxId: '',
-    checkInDate: defaultDate ? format(defaultDate, 'yyyy-MM-dd') : '',
-    checkOutDate: defaultDate ? format(new Date(defaultDate.getTime() + 86400000), 'yyyy-MM-dd') : '',
-    roomId: defaultRoomId || 0,
-    status: 'Unpaid' as BookingStatus,
-    deposit: 0,
-    pricePerNight: 800,
-  });
+  
+  const getInitialFormData = () => {
+    const checkIn = defaultDate ? format(defaultDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+    const checkOut = defaultDate ? format(addDays(defaultDate, 1), 'yyyy-MM-dd') : format(addDays(new Date(), 1), 'yyyy-MM-dd');
+
+    return {
+      customerName: '',
+      phone: '',
+      email: '',
+      address: '',
+      taxId: '',
+      checkInDate: checkIn,
+      checkOutDate: checkOut,
+      roomId: defaultRoomId || (rooms.length > 0 ? rooms[0].id : 0),
+      status: 'Unpaid' as BookingStatus,
+      deposit: 0,
+      pricePerNight: 800,
+    };
+  }
+
+  const [formData, setFormData] = useState(getInitialFormData());
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (booking) {
@@ -47,14 +55,10 @@ const BookingForm: React.FC<BookingFormProps> = ({ isOpen, onClose, booking, def
         pricePerNight: booking.pricePerNight,
       });
     } else {
-       setFormData(prev => ({
-           ...prev,
-           checkInDate: defaultDate ? format(defaultDate, 'yyyy-MM-dd') : '',
-           checkOutDate: defaultDate ? format(new Date(defaultDate.getTime() + 86400000), 'yyyy-MM-dd') : '',
-           roomId: defaultRoomId || (rooms.length > 0 ? rooms[0].id : 0),
-       }));
+       setFormData(getInitialFormData());
     }
-  }, [booking, defaultDate, defaultRoomId, rooms]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [booking, defaultDate, defaultRoomId, rooms, isOpen]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -72,31 +76,40 @@ const BookingForm: React.FC<BookingFormProps> = ({ isOpen, onClose, booking, def
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsSubmitting(true);
 
-    if (isBefore(parseISO(formData.checkOutDate), parseISO(formData.checkInDate))) {
+    if (isBefore(parseISO(formData.checkOutDate), parseISO(formData.checkInDate)) || formData.checkInDate === formData.checkOutDate) {
       setError('Check-out date must be after check-in date.');
+      setIsSubmitting(false);
       return;
     }
 
     if (!isRoomAvailable()) {
         setError(t('bookingForm.roomIsBooked'));
+        setIsSubmitting(false);
         return;
     }
 
     const bookingData = {
         ...formData,
-        deposit: formData.status === 'Deposit' ? formData.deposit : 0
+        deposit: formData.status === 'Deposit' ? formData.deposit : 0,
     };
 
-    if (booking) {
-      updateBooking({ ...booking, ...bookingData });
-    } else {
-      addBooking(bookingData);
+    try {
+      if (booking) {
+        await updateBooking({ ...booking, ...bookingData });
+      } else {
+        await addBooking(bookingData);
+      }
+      onClose();
+    } catch (apiError: any) {
+      setError(apiError.message || 'An unexpected error occurred.');
+    } finally {
+      setIsSubmitting(false);
     }
-    onClose();
   };
   
   if (!isOpen) return null;
@@ -127,6 +140,7 @@ const BookingForm: React.FC<BookingFormProps> = ({ isOpen, onClose, booking, def
              <div>
               <label className="block text-sm font-medium">{t('bookingForm.room')}</label>
               <select name="roomId" value={formData.roomId} onChange={handleChange} required className="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                <option value={0} disabled>Select a room</option>
                 {rooms.map(room => <option key={room.id} value={room.id}>{room.number} - {room.type} ({room.bedType})</option>)}
               </select>
             </div>
@@ -167,7 +181,9 @@ const BookingForm: React.FC<BookingFormProps> = ({ isOpen, onClose, booking, def
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <div className="flex justify-end space-x-4">
             <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">{t('bookingForm.cancel')}</button>
-            <button type="submit" className="bg-sunriver-yellow text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-500">{t('bookingForm.saveBooking')}</button>
+            <button type="submit" disabled={isSubmitting} className="bg-sunriver-yellow text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-500 disabled:bg-gray-400">
+                {isSubmitting ? 'Saving...' : t('bookingForm.saveBooking')}
+            </button>
           </div>
         </form>
       </div>

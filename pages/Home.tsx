@@ -10,8 +10,15 @@ import { getCalendarDays } from '../utils/dateUtils';
 import BookingForm from '../components/BookingForm';
 import type { Booking } from '../types';
 
+const DataStateDisplay: React.FC = () => {
+    const { loading, error } = useAppContext();
+    if (loading) return <div className="flex justify-center items-center p-8"><i className="fas fa-spinner fa-spin text-2xl text-sunriver-yellow"></i><span className="ml-2">Loading Data...</span></div>;
+    if (error) return <div className="text-center p-8 text-red-500 bg-red-100 rounded-lg"><strong>Error:</strong> {error}</div>;
+    return null;
+};
+
 const HomePage: React.FC = () => {
-    const { rooms, bookings, getBookingsForDate } = useAppContext();
+    const { rooms, bookings, getBookingsForDate, loading, error } = useAppContext();
     const { t, language } = useLanguage();
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -87,73 +94,78 @@ const HomePage: React.FC = () => {
     return (
         <div className="space-y-8">
             <h1 className="text-3xl font-bold text-sunriver-blue">{t('home.bookingOverview')}</h1>
-
-            {/* Calendar */}
-            <div className="bg-white p-6 rounded-lg shadow-md">
-                <div className="flex justify-between items-center mb-4">
-                    <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-2 rounded-full hover:bg-gray-200"><i className="fas fa-chevron-left"></i></button>
-                    {/* FIX: Use imported locale objects instead of require. */}
-                    <h2 className="text-xl font-semibold">{format(currentMonth, 'MMMM yyyy', { locale: language === 'th' ? th : enUS })}</h2>
-                    <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-2 rounded-full hover:bg-gray-200"><i className="fas fa-chevron-right"></i></button>
-                    <button onClick={() => { setIsModalOpen(true); setSelectedDate(new Date()); setEditingBooking(null); }} className="bg-sunriver-yellow text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-500 transition-colors hidden md:block">{t('home.addBooking')}</button>
-                </div>
-                <div className="grid grid-cols-7 gap-1 text-center font-semibold text-gray-600">
-                    {weekdays.map(day => <div key={day} className="py-2">{day}</div>)}
-                </div>
-                <div className="grid grid-cols-7 gap-1">
-                    {calendarDays.map((day, i) => {
-                        const bookingsOnDay = getBookingsForDate(day);
-                        const bookedCount = bookingsOnDay.length;
-                        const vacantCount = rooms.length - bookedCount;
-                        return (
-                            <div key={i} onClick={() => handleDateClick(day)} className={`p-2 border rounded-md cursor-pointer transition-all h-24 md:h-32 flex flex-col justify-between ${!isSameMonth(day, currentMonth) ? 'bg-gray-50 text-gray-400' : 'bg-white hover:bg-yellow-50'} ${isToday(day) ? 'border-2 border-sunriver-yellow' : 'border-gray-200'}`}>
-                                <span className="font-semibold self-start">{format(day, 'd')}</span>
-                                {isSameMonth(day, currentMonth) && (
-                                    <div className="text-xs md:text-sm text-center">
-                                        <div className="flex items-center justify-center space-x-1 text-green-600">
-                                            <i className="fas fa-check-circle"></i> 
-                                            <span className="font-bold">{vacantCount}</span>
-                                            <span className="hidden lg:inline">{t('home.vacant')}</span>
-                                        </div>
-                                        <div className="flex items-center justify-center space-x-1 text-red-600">
-                                            <i className="fas fa-times-circle"></i>
-                                            <span className="font-bold">{bookedCount}</span>
-                                            <span className="hidden lg:inline">{t('home.booked')}</span>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
+            <DataStateDisplay />
             
-            <button onClick={() => { setIsModalOpen(true); setSelectedDate(new Date()); setEditingBooking(null); }} className="bg-sunriver-yellow text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-500 transition-colors w-full md:hidden fixed bottom-4 right-4 z-10 shadow-lg">{t('home.addBooking')}</button>
+            { !loading && !error && (
+                <>
+                    {/* Calendar */}
+                    <div className="bg-white p-6 rounded-lg shadow-md">
+                        <div className="flex justify-between items-center mb-4">
+                            <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-2 rounded-full hover:bg-gray-200"><i className="fas fa-chevron-left"></i></button>
+                            {/* FIX: Use imported locale objects instead of require. */}
+                            <h2 className="text-xl font-semibold">{format(currentMonth, 'MMMM yyyy', { locale: language === 'th' ? th : enUS })}</h2>
+                            <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-2 rounded-full hover:bg-gray-200"><i className="fas fa-chevron-right"></i></button>
+                            <button onClick={() => { setIsModalOpen(true); setSelectedDate(new Date()); setEditingBooking(null); }} className="bg-sunriver-yellow text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-500 transition-colors hidden md:block">{t('home.addBooking')}</button>
+                        </div>
+                        <div className="grid grid-cols-7 gap-1 text-center font-semibold text-gray-600">
+                            {weekdays.map(day => <div key={day} className="py-2">{day}</div>)}
+                        </div>
+                        <div className="grid grid-cols-7 gap-1">
+                            {calendarDays.map((day, i) => {
+                                const bookingsOnDay = getBookingsForDate(day);
+                                const bookedCount = bookingsOnDay.length;
+                                const vacantCount = rooms.length - bookedCount;
+                                return (
+                                    <div key={i} onClick={() => handleDateClick(day)} className={`p-2 border rounded-md cursor-pointer transition-all h-24 md:h-32 flex flex-col justify-between ${!isSameMonth(day, currentMonth) ? 'bg-gray-50 text-gray-400' : 'bg-white hover:bg-yellow-50'} ${isToday(day) ? 'border-2 border-sunriver-yellow' : 'border-gray-200'}`}>
+                                        <span className="font-semibold self-start">{format(day, 'd')}</span>
+                                        {isSameMonth(day, currentMonth) && (
+                                            <div className="text-xs md:text-sm text-center">
+                                                <div className="flex items-center justify-center space-x-1 text-green-600">
+                                                    <i className="fas fa-check-circle"></i> 
+                                                    <span className="font-bold">{vacantCount}</span>
+                                                    <span className="hidden lg:inline">{t('home.vacant')}</span>
+                                                </div>
+                                                <div className="flex items-center justify-center space-x-1 text-red-600">
+                                                    <i className="fas fa-times-circle"></i>
+                                                    <span className="font-bold">{bookedCount}</span>
+                                                    <span className="hidden lg:inline">{t('home.booked')}</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    
+                    <button onClick={() => { setIsModalOpen(true); setSelectedDate(new Date()); setEditingBooking(null); }} className="bg-sunriver-yellow text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-500 transition-colors w-full md:hidden fixed bottom-4 right-4 z-10 shadow-lg">{t('home.addBooking')}</button>
 
-            {/* Daily Summary */}
-            <div className="bg-white p-6 rounded-lg shadow-md">
-                <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4">
-                     <h2 className="text-xl font-semibold">{t('home.todaysSummary')}</h2>
-                     <input
-                        type="date"
-                        value={format(summaryDate, 'yyyy-MM-dd')}
-                        onChange={(e) => setSummaryDate(e.target.value ? parseISO(e.target.value) : new Date())}
-                        className="border-gray-300 rounded-md shadow-sm p-2 focus:border-sunriver-yellow focus:ring-sunriver-yellow mt-2 sm:mt-0"
-                    />
-                </div>
-                <div className="border-b border-gray-200">
-                    <nav className="-mb-px flex space-x-4 md:space-x-8" aria-label="Tabs">
-                        <button onClick={() => setActiveSummaryTab('checkIn')} className={`${activeSummaryTab === 'checkIn' ? 'border-sunriver-yellow text-sunriver-blue' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>{t('home.checkIn')} ({summaryCheckIns.length})</button>
-                        <button onClick={() => setActiveSummaryTab('checkOut')} className={`${activeSummaryTab === 'checkOut' ? 'border-sunriver-yellow text-sunriver-blue' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>{t('home.checkOut')} ({summaryCheckOuts.length})</button>
-                        <button onClick={() => setActiveSummaryTab('inHouse')} className={`${activeSummaryTab === 'inHouse' ? 'border-sunriver-yellow text-sunriver-blue' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>{t('home.inHouse')} ({summaryInHouseGuests.length})</button>
-                    </nav>
-                </div>
-                <div className="mt-4 max-h-60 overflow-y-auto">
-                    {activeSummaryTab === 'checkIn' && renderSummaryList(summaryCheckIns)}
-                    {activeSummaryTab === 'checkOut' && renderSummaryList(summaryCheckOuts)}
-                    {activeSummaryTab === 'inHouse' && renderSummaryList(summaryInHouseGuests)}
-                </div>
-            </div>
+                    {/* Daily Summary */}
+                    <div className="bg-white p-6 rounded-lg shadow-md">
+                        <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4">
+                             <h2 className="text-xl font-semibold">{t('home.todaysSummary')}</h2>
+                             <input
+                                type="date"
+                                value={format(summaryDate, 'yyyy-MM-dd')}
+                                onChange={(e) => setSummaryDate(e.target.value ? parseISO(e.target.value) : new Date())}
+                                className="border-gray-300 rounded-md shadow-sm p-2 focus:border-sunriver-yellow focus:ring-sunriver-yellow mt-2 sm:mt-0"
+                            />
+                        </div>
+                        <div className="border-b border-gray-200">
+                            <nav className="-mb-px flex space-x-4 md:space-x-8" aria-label="Tabs">
+                                <button onClick={() => setActiveSummaryTab('checkIn')} className={`${activeSummaryTab === 'checkIn' ? 'border-sunriver-yellow text-sunriver-blue' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>{t('home.checkIn')} ({summaryCheckIns.length})</button>
+                                <button onClick={() => setActiveSummaryTab('checkOut')} className={`${activeSummaryTab === 'checkOut' ? 'border-sunriver-yellow text-sunriver-blue' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>{t('home.checkOut')} ({summaryCheckOuts.length})</button>
+                                <button onClick={() => setActiveSummaryTab('inHouse')} className={`${activeSummaryTab === 'inHouse' ? 'border-sunriver-yellow text-sunriver-blue' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>{t('home.inHouse')} ({summaryInHouseGuests.length})</button>
+                            </nav>
+                        </div>
+                        <div className="mt-4 max-h-60 overflow-y-auto">
+                            {activeSummaryTab === 'checkIn' && renderSummaryList(summaryCheckIns)}
+                            {activeSummaryTab === 'checkOut' && renderSummaryList(summaryCheckOuts)}
+                            {activeSummaryTab === 'inHouse' && renderSummaryList(summaryInHouseGuests)}
+                        </div>
+                    </div>
+                </>
+            )}
 
             {isModalOpen && (
                 <BookingForm

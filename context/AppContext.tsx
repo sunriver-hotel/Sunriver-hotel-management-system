@@ -1,67 +1,112 @@
-
 import React, { createContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import type { Booking, CleaningStatus, Room } from '../types';
-import { ROOMS, INITIAL_BOOKINGS, INITIAL_CLEANING_STATUSES } from '../constants';
-import { isSameDay, isBefore, parseISO, startOfToday, endOfToday, endOfDay, isWithinInterval } from 'date-fns';
+import type { Booking, CleaningStatus, CleaningStatusValue, Room } from '../types';
+import { isSameDay, parseISO, isWithinInterval } from 'date-fns';
+
+// Helper function to fetch data from the API
+async function fetchData<T>(url: string, options?: RequestInit): Promise<T> {
+  const response = await fetch(url, options);
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
+    throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+}
 
 interface AppContextType {
   rooms: Room[];
   bookings: Booking[];
   cleaningStatuses: CleaningStatus[];
-  addBooking: (booking: Omit<Booking, 'id' | 'createdAt'>) => void;
-  updateBooking: (booking: Booking) => void;
-  updateCleaningStatus: (roomId: number, status: 'Clean' | 'Needs Cleaning') => void;
+  addBooking: (booking: Omit<Booking, 'id' | 'createdAt' | 'customerId'>) => Promise<void>;
+  updateBooking: (booking: Booking) => Promise<void>;
+  updateCleaningStatus: (roomId: number, status: CleaningStatusValue) => Promise<void>;
   getBookingsForDate: (date: Date) => Booking[];
   getRoomStatusForDate: (roomId: number, date: Date) => 'Booked' | 'Vacant';
+  loading: boolean;
+  error: string | null;
+  reloadData: () => Promise<void>;
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [bookings, setBookings] = useState<Booking[]>(() => {
-    const savedBookings = localStorage.getItem('bookings');
-    return savedBookings ? JSON.parse(savedBookings) : INITIAL_BOOKINGS;
-  });
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [cleaningStatuses, setCleaningStatuses] = useState<CleaningStatus[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [cleaningStatuses, setCleaningStatuses] = useState<CleaningStatus[]>(() => {
-    const savedStatuses = localStorage.getItem('cleaningStatuses');
-    return savedStatuses ? JSON.parse(savedStatuses) : INITIAL_CLEANING_STATUSES;
-  });
+  const reloadData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [roomsData, bookingsData, cleaningStatusesData] = await Promise.all([
+        fetchData<Room[]>('/api/rooms'),
+        fetchData<Booking[]>('/api/bookings'),
+        fetchData<CleaningStatus[]>('/api/cleaning-statuses')
+      ]);
+      setRooms(roomsData);
+      setBookings(bookingsData);
+      setCleaningStatuses(cleaningStatusesData);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem('bookings', JSON.stringify(bookings));
-  }, [bookings]);
-
-  useEffect(() => {
-    localStorage.setItem('cleaningStatuses', JSON.stringify(cleaningStatuses));
-  }, [cleaningStatuses]);
+    reloadData();
+  }, [reloadData]);
   
-  const addBooking = (bookingData: Omit<Booking, 'id' | 'createdAt'>) => {
-    const dateStr = bookingData.checkInDate.replace(/-/g, '');
-    const newId = `SRH-${dateStr}-${String(Date.now()).slice(-4)}`;
-    const newBooking: Booking = {
-      ...bookingData,
-      id: newId,
-      createdAt: Date.now(),
-    };
-    setBookings(prev => [...prev, newBooking]);
+  const addBooking = async (bookingData: Omit<Booking, 'id' | 'createdAt' | 'customerId'>) => {
+    try {
+      await fetchData<Booking>('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookingData),
+      });
+      await reloadData();
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    }
   };
 
-  const updateBooking = (updatedBooking: Booking) => {
-    setBookings(prev => prev.map(b => b.id === updatedBooking.id ? updatedBooking : b));
+  const updateBooking = async (updatedBooking: Booking) => {
+    try {
+        await fetchData<Booking>(`/api/bookings?id=${updatedBooking.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedBooking),
+        });
+        await reloadData();
+    } catch (err: any) {
+        setError(err.message);
+        throw err;
+    }
   };
 
-  const updateCleaningStatus = (roomId: number, status: 'Clean' | 'Needs Cleaning') => {
-    setCleaningStatuses(prev => prev.map(cs => 
-      cs.roomId === roomId ? { ...cs, status, lastUpdated: Date.now() } : cs
-    ));
+  const updateCleaningStatus = async (roomId: number, status: CleaningStatusValue) => {
+    try {
+        const updatedStatus = await fetchData<CleaningStatus>(`/api/cleaning-statuses`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roomId, status }),
+        });
+        setCleaningStatuses(prev => prev.map(cs => 
+            cs.roomId === roomId ? { ...cs, status: updatedStatus.status, lastUpdated: updatedStatus.lastUpdated } : cs
+        ));
+    } catch (err:any) {
+        setError(err.message);
+        throw err;
+    }
   };
 
   const getBookingsForDate = useCallback((date: Date): Booking[] => {
     return bookings.filter(booking => {
       const checkIn = parseISO(booking.checkInDate);
       const checkOut = parseISO(booking.checkOutDate);
-      return isWithinInterval(date, { start: checkIn, end: endOfDay(checkOut) }) && !isSameDay(date, checkOut);
+      return date >= checkIn && date < checkOut;
     });
   }, [bookings]);
 
@@ -75,43 +120,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return isBooked ? 'Booked' : 'Vacant';
   }, [bookings]);
 
-  const runDailyCleaningUpdate = useCallback(() => {
-    const today = startOfToday();
-    const occupiedRoomIds = new Set<number>();
-
-    bookings.forEach(booking => {
-        const checkIn = parseISO(booking.checkInDate);
-        const checkOut = parseISO(booking.checkOutDate);
-        if (today >= checkIn && today < checkOut) {
-            occupiedRoomIds.add(booking.roomId);
-        }
-    });
-    
-    setCleaningStatuses(prevStatuses =>
-        prevStatuses.map(cs =>
-            occupiedRoomIds.has(cs.roomId)
-                ? { ...cs, status: 'Needs Cleaning', lastUpdated: Date.now() }
-                : cs
-        )
-    );
-  }, [bookings]);
-  
-  useEffect(() => {
-    const now = new Date();
-    const endOfTodayMs = endOfToday().getTime();
-    const msUntilMidnight = endOfTodayMs - now.getTime() + 1000; // a second after midnight
-
-    const timerId = setTimeout(() => {
-        runDailyCleaningUpdate();
-        const intervalId = setInterval(runDailyCleaningUpdate, 24 * 60 * 60 * 1000); // every 24 hours
-        return () => clearInterval(intervalId);
-    }, msUntilMidnight);
-
-    return () => clearTimeout(timerId);
-  }, [runDailyCleaningUpdate]);
-
   return (
-    <AppContext.Provider value={{ rooms: ROOMS, bookings, cleaningStatuses, addBooking, updateBooking, updateCleaningStatus, getBookingsForDate, getRoomStatusForDate }}>
+    <AppContext.Provider value={{ rooms, bookings, cleaningStatuses, addBooking, updateBooking, updateCleaningStatus, getBookingsForDate, getRoomStatusForDate, loading, error, reloadData }}>
       {children}
     </AppContext.Provider>
   );

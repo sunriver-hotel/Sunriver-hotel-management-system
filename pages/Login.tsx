@@ -20,17 +20,36 @@ const LanguageButton: React.FC<{ lang: Language; currentLang: Language; setLang:
 
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('admin');
+  const [password, setPassword] = useState('admin2');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { language, setLanguage, t } = useLanguage();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === 'admin' && password === 'admin2') {
-      onLogin();
-    } else {
-      setError(t('login.invalidCredentials'));
+    setError('');
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+      
+      const data = await response.json();
+
+      if (response.ok) {
+        onLogin();
+      } else {
+        setError(data.message || t('login.invalidCredentials'));
+      }
+    } catch (err) {
+      setError('Failed to connect to the server.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -52,7 +71,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-sunriver-yellow"
-              placeholder="admin"
+              placeholder="Username"
             />
           </div>
           <div className="mb-6">
@@ -65,16 +84,17 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-sunriver-yellow"
-              placeholder="admin2"
+              placeholder="Password"
             />
           </div>
           {error && <p className="text-red-500 text-xs italic mb-4">{error}</p>}
           <div className="flex items-center justify-between">
             <button
               type="submit"
-              className="bg-sunriver-yellow hover:bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition-colors duration-300 w-full"
+              disabled={isLoading}
+              className="bg-sunriver-yellow hover:bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:shadow-outline transition-colors duration-300 w-full disabled:bg-gray-400"
             >
-              {t('login.loginButton')}
+              {isLoading ? 'Logging in...' : t('login.loginButton')}
             </button>
           </div>
         </form>

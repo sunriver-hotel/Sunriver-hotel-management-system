@@ -7,11 +7,12 @@ import { eachDayOfInterval, format, startOfMonth, endOfMonth, eachMonthOfInterva
 type Period = 'daily' | 'monthly' | 'yearly';
 
 const DashboardPage: React.FC = () => {
-  const { rooms, bookings } = useAppContext();
+  const { rooms, bookings, loading, error } = useAppContext();
   const { t } = useLanguage();
   const [period, setPeriod] = useState<Period>('daily');
 
   const occupancyData = useMemo(() => {
+    if (!bookings || bookings.length === 0 || rooms.length === 0) return [];
     const today = new Date();
     if (period === 'daily') {
       const days = eachDayOfInterval({ start: startOfMonth(today), end: endOfMonth(today) });
@@ -51,6 +52,7 @@ const DashboardPage: React.FC = () => {
   }, [period, bookings, rooms.length, t]);
 
   const mostBookedRoomsData = useMemo(() => {
+    if (!bookings || bookings.length === 0 || rooms.length === 0) return [];
     const roomCounts: { [key: number]: number } = {};
     bookings.forEach(booking => {
       roomCounts[booking.roomId] = (roomCounts[booking.roomId] || 0) + 1;
@@ -79,41 +81,46 @@ const DashboardPage: React.FC = () => {
     <div className="space-y-8">
       <h1 className="text-3xl font-bold text-sunriver-blue">{t('dashboard.title')}</h1>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">{t('dashboard.occupancyStatistics')}</h2>
-            <div className="flex space-x-2">
-              <PeriodButton p="daily" label={t('dashboard.daily')} />
-              <PeriodButton p="monthly" label={t('dashboard.monthly')} />
+      {loading && <div className="flex justify-center items-center p-8"><i className="fas fa-spinner fa-spin text-2xl text-sunriver-yellow"></i><span className="ml-2">Loading Dashboard...</span></div>}
+      {error && <div className="text-center p-8 text-red-500 bg-red-100 rounded-lg"><strong>Error:</strong> {error}</div>}
+      
+      {!loading && !error && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">{t('dashboard.occupancyStatistics')}</h2>
+              <div className="flex space-x-2">
+                <PeriodButton p="daily" label={t('dashboard.daily')} />
+                <PeriodButton p="monthly" label={t('dashboard.monthly')} />
+              </div>
             </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={occupancyData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis unit="%" domain={[0, 100]} />
+                <Tooltip formatter={(value: number) => `${value.toFixed(2)}%`} />
+                <Legend />
+                <Line type="monotone" dataKey={t('dashboard.occupancyRate')} stroke="#e6c872" strokeWidth={2} activeDot={{ r: 8 }} />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={occupancyData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis unit="%" domain={[0, 100]} />
-              <Tooltip formatter={(value: number) => `${value.toFixed(2)}%`} />
-              <Legend />
-              <Line type="monotone" dataKey={t('dashboard.occupancyRate')} stroke="#e6c872" strokeWidth={2} activeDot={{ r: 8 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4">{t('dashboard.mostBookedRooms')}</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={mostBookedRoomsData} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis type="category" dataKey="name" width={80} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey={t('dashboard.bookings')} fill="#a8d8c9" />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-semibold mb-4">{t('dashboard.mostBookedRooms')}</h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={mostBookedRoomsData} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis type="category" dataKey="name" width={80} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey={t('dashboard.bookings')} fill="#a8d8c9" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

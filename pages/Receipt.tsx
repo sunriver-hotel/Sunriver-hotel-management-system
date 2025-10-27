@@ -6,14 +6,14 @@ import type { Booking } from '../types';
 import ReceiptTemplate from '../components/ReceiptTemplate';
 
 const ReceiptPage: React.FC = () => {
-    const { bookings } = useAppContext();
+    const { bookings, loading, error } = useAppContext();
     const { t } = useLanguage();
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedBookingIds, setSelectedBookingIds] = useState<Set<string>>(new Set());
     const [receiptBookings, setReceiptBookings] = useState<Booking[]>([]);
 
     const sortedBookings = useMemo(() => {
-        return [...bookings].sort((a, b) => b.createdAt - a.createdAt);
+        return [...bookings].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }, [bookings]);
     
     const filteredBookings = useMemo(() => {
@@ -62,7 +62,9 @@ const ReceiptPage: React.FC = () => {
                 />
                 <h2 className="text-xl font-semibold">{t('receipt.recentBookings')}</h2>
                 <div className="flex-1 overflow-y-auto bg-white p-4 rounded-lg shadow-sm border">
-                    {filteredBookings.map(booking => (
+                    {loading && <div className="flex justify-center items-center p-4"><i className="fas fa-spinner fa-spin text-sunriver-yellow"></i><span className="ml-2">Loading Bookings...</span></div>}
+                    {error && <div className="text-center p-4 text-red-500 bg-red-100 rounded-lg"><strong>Error:</strong> {error}</div>}
+                    {!loading && !error && filteredBookings.map(booking => (
                         <div key={booking.id} className="flex items-center p-2 border-b">
                             <input
                                 type="checkbox"

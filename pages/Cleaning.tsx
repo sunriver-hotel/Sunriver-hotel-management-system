@@ -6,7 +6,7 @@ import { isToday, parseISO } from 'date-fns';
 import type { CleaningStatusValue } from '../types';
 
 const CleaningPage: React.FC = () => {
-    const { rooms, cleaningStatuses, updateCleaningStatus, bookings } = useAppContext();
+    const { rooms, cleaningStatuses, updateCleaningStatus, bookings, loading, error } = useAppContext();
     const { t } = useLanguage();
     const [modalInfo, setModalInfo] = useState<{
         isOpen: boolean;
@@ -19,9 +19,9 @@ const CleaningPage: React.FC = () => {
         setModalInfo({ isOpen: true, roomId, newStatus });
     };
 
-    const handleConfirmStatusChange = () => {
+    const handleConfirmStatusChange = async () => {
         if (modalInfo.roomId !== null && modalInfo.newStatus) {
-            updateCleaningStatus(modalInfo.roomId, modalInfo.newStatus);
+            await updateCleaningStatus(modalInfo.roomId, modalInfo.newStatus);
         }
         setModalInfo({ isOpen: false, roomId: null, newStatus: null });
     };
@@ -65,30 +65,36 @@ const CleaningPage: React.FC = () => {
     return (
         <div className="space-y-6">
             <h1 className="text-3xl font-bold text-sunriver-blue">{t('cleaning.title')}</h1>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {rooms.map(room => {
-                    const cleaningStatus = cleaningStatuses.find(cs => cs.roomId === room.id);
-                    const currentStatus = cleaningStatus?.status || 'Clean';
-                    const isClean = currentStatus === 'Clean';
-                    const occupancy = getOccupancyStatus(room.id);
-                    return (
-                        <div 
-                            key={room.id} 
-                            onClick={() => handleStatusToggle(room.id, currentStatus)}
-                            className={`p-4 rounded-lg shadow-lg flex flex-col justify-between transition-all duration-300 cursor-pointer ${isClean ? 'bg-green-100 hover:bg-green-200' : 'bg-red-100 hover:bg-red-200'}`}>
-                            <div>
-                                <div className="flex justify-between items-center">
-                                    <p className="text-2xl font-bold text-sunriver-blue">{room.number}</p>
-                                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${isClean ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
-                                        {isClean ? t('cleaning.clean') : t('cleaning.needsCleaning')}
-                                    </span>
+            
+            {loading && <div className="flex justify-center items-center p-8"><i className="fas fa-spinner fa-spin text-2xl text-sunriver-yellow"></i><span className="ml-2">Loading Statuses...</span></div>}
+            {error && <div className="text-center p-8 text-red-500 bg-red-100 rounded-lg"><strong>Error:</strong> {error}</div>}
+
+            {!loading && !error && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {rooms.map(room => {
+                        const cleaningStatus = cleaningStatuses.find(cs => cs.roomId === room.id);
+                        const currentStatus = cleaningStatus?.status || 'Clean';
+                        const isClean = currentStatus === 'Clean';
+                        const occupancy = getOccupancyStatus(room.id);
+                        return (
+                            <div 
+                                key={room.id} 
+                                onClick={() => handleStatusToggle(room.id, currentStatus)}
+                                className={`p-4 rounded-lg shadow-lg flex flex-col justify-between transition-all duration-300 cursor-pointer ${isClean ? 'bg-green-100 hover:bg-green-200' : 'bg-red-100 hover:bg-red-200'}`}>
+                                <div>
+                                    <div className="flex justify-between items-center">
+                                        <p className="text-2xl font-bold text-sunriver-blue">{room.number}</p>
+                                        <span className={`px-3 py-1 text-xs font-semibold rounded-full ${isClean ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
+                                            {isClean ? t('cleaning.clean') : t('cleaning.needsCleaning')}
+                                        </span>
+                                    </div>
+                                    <p className="text-sm text-gray-500 mt-1">{t('cleaning.status')}: <span className="font-medium text-gray-700">{occupancy}</span></p>
                                 </div>
-                                <p className="text-sm text-gray-500 mt-1">{t('cleaning.status')}: <span className="font-medium text-gray-700">{occupancy}</span></p>
                             </div>
-                        </div>
-                    );
-                })}
-            </div>
+                        );
+                    })}
+                </div>
+            )}
 
             <ConfirmationModal
                 isOpen={modalInfo.isOpen}
