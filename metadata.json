@@ -1,0 +1,5 @@
+{
+  "name": "Sunriver Hotel Management",
+  "description": "A hotel management application for Sunriver Hotel staff to manage bookings, view room status, track cleaning, view statistics, and generate receipts. The application is bilingual (Thai/English) and features a responsive design for desktop, tablet, and mobile use.",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,121 @@
+
+import React, { useState, useMemo } from 'react';
+import { useAppContext } from '../hooks/useAppContext';
+import { useLanguage } from '../hooks/useLanguage';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { eachDayOfInterval, format, startOfMonth, endOfMonth, eachMonthOfInterval, startOfYear, endOfYear } from 'date-fns';
+
+type Period = 'daily' | 'monthly' | 'yearly';
+
+const DashboardPage: React.FC = () => {
+  const { rooms, bookings } = useAppContext();
+  const { t } = useLanguage();
+  const [period, setPeriod] = useState<Period>('daily');
+
+  const occupancyData = useMemo(() => {
+    const today = new Date();
+    if (period === 'daily') {
+      const days = eachDayOfInterval({ start: startOfMonth(today), end: endOfMonth(today) });
+      return days.map(day => {
+        const bookedCount = bookings.filter(b => {
+            const checkIn = new Date(b.checkInDate);
+            const checkOut = new Date(b.checkOutDate);
+            return day >= checkIn && day < checkOut;
+        }).length;
+        return {
+          name: format(day, 'd'),
+          [t('dashboard.occupancyRate')]: (bookedCount / rooms.length) * 100,
+        };
+      });
+    }
+    if (period === 'monthly') {
+      const months = eachMonthOfInterval({ start: startOfYear(today), end: endOfYear(today) });
+      return months.map(month => {
+          const daysInMonth = eachDayOfInterval({start: startOfMonth(month), end: endOfMonth(month)});
+          let totalBookedNights = 0;
+          daysInMonth.forEach(day => {
+            totalBookedNights += bookings.filter(b => {
+                const checkIn = new Date(b.checkInDate);
+                const checkOut = new Date(b.checkOutDate);
+                return day >= checkIn && day < checkOut;
+            }).length;
+          });
+
+        return {
+          name: format(month, 'MMM'),
+          [t('dashboard.occupancyRate')]: (totalBookedNights / (daysInMonth.length * rooms.length)) * 100,
+        };
+      });
+    }
+    // Yearly data is a bit broad, so we'll show monthly for current year as 'yearly' view
+    return []; // Yearly could be implemented for multiple years if data was available
+  }, [period, bookings, rooms.length, t]);
+
+  const mostBookedRoomsData = useMemo(() => {
+    const roomCounts: { [key: number]: number } = {};
+    bookings.forEach(booking => {
+      roomCounts[booking.roomId] = (roomCounts[booking.roomId] || 0) + 1;
+    });
+    return Object.entries(roomCounts)
+      .map(([roomId, count]) => ({
+        name: rooms.find(r => r.id === parseInt(roomId))?.number || `Room ${roomId}`,
+        [t('dashboard.bookings')]: count,
+      }))
+      .sort((a, b) => b[t('dashboard.bookings')] - a[t('dashboard.bookings')])
+      .slice(0, 10);
+  }, [bookings, rooms, t]);
+
+  const PeriodButton:React.FC<{p:Period, label:string}> = ({ p, label }) => (
+    <button
+        onClick={() => setPeriod(p)}
+        className={`px-4 py-2 rounded-md text-sm font-medium ${period === p ? 'bg-sunriver-yellow text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+    >
+        {label}
+    </button>
+  );
+
+
+  return (
+    <div className="space-y-8">
+      <h1 className="text-3xl font-bold text-sunriver-blue">{t('dashboard.title')}</h1>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">{t('dashboard.occupancyStatistics')}</h2>
+            <div className="flex space-x-2">
+              <PeriodButton p="daily" label={t('dashboard.daily')} />
+              <PeriodButton p="monthly" label={t('dashboard.monthly')} />
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={occupancyData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis unit="%" domain={[0, 100]} />
+              <Tooltip formatter={(value: number) => `${value.toFixed(2)}%`} />
+              <Legend />
+              <Line type="monotone" dataKey={t('dashboard.occupancyRate')} stroke="#e6c872" strokeWidth={2} activeDot={{ r: 8 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-semibold mb-4">{t('dashboard.mostBookedRooms')}</h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={mostBookedRoomsData} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" />
+              <YAxis type="category" dataKey="name" width={80} />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey={t('dashboard.bookings')} fill="#a8d8c9" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DashboardPage;
