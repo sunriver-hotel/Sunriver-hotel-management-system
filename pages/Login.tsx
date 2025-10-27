@@ -71,7 +71,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-sunriver-yellow"
-              placeholder="Username"
+              placeholder="admin"
             />
           </div>
           <div className="mb-6">
@@ -84,7 +84,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-sunriver-yellow"
-              placeholder="Password"
+              placeholder="admin2"
             />
           </div>
           {error && <p className="text-red-500 text-xs italic mb-4">{error}</p>}

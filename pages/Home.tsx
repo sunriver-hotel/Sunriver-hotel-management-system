@@ -1,7 +1,5 @@
-
 import React, { useState } from 'react';
 import { format, addMonths, subMonths, isSameMonth, isToday, parseISO, isSameDay } from 'date-fns';
-// FIX: Import locales using ES module syntax instead of require.
 import { th } from 'date-fns/locale/th';
 import { enUS } from 'date-fns/locale/en-US';
 import { useAppContext } from '../hooks/useAppContext';
@@ -102,7 +100,6 @@ const HomePage: React.FC = () => {
                     <div className="bg-white p-6 rounded-lg shadow-md">
                         <div className="flex justify-between items-center mb-4">
                             <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-2 rounded-full hover:bg-gray-200"><i className="fas fa-chevron-left"></i></button>
-                            {/* FIX: Use imported locale objects instead of require. */}
                             <h2 className="text-xl font-semibold">{format(currentMonth, 'MMMM yyyy', { locale: language === 'th' ? th : enUS })}</h2>
                             <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-2 rounded-full hover:bg-gray-200"><i className="fas fa-chevron-right"></i></button>
                             <button onClick={() => { setIsModalOpen(true); setSelectedDate(new Date()); setEditingBooking(null); }} className="bg-sunriver-yellow text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-500 transition-colors hidden md:block">{t('home.addBooking')}</button>

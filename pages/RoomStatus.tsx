@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { format, parseISO } from 'date-fns';
 import { useAppContext } from '../hooks/useAppContext';
