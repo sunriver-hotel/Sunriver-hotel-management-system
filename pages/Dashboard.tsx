@@ -60,7 +60,8 @@ const DashboardPage: React.FC = () => {
         name: rooms.find(r => r.id === parseInt(roomId))?.number || `Room ${roomId}`,
         [t('dashboard.bookings')]: count,
       }))
-      .sort((a, b) => b[t('dashboard.bookings')] - a[t('dashboard.bookings')])
+      // FIX: Explicitly cast dynamically accessed property values to 'number' to resolve a TypeScript type error during the sort comparison.
+      .sort((a, b) => (b[t('dashboard.bookings')] as number) - (a[t('dashboard.bookings')] as number))
       .slice(0, 10);
   }, [bookings, rooms, t]);
 

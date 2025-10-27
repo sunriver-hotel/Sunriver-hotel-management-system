@@ -115,7 +115,16 @@ export const translations: Translations = {
         transfer: 'Transfer',
         thbDate: 'THB, Date.',
         authorizedSignature: 'Authorized Signature'
-    }
+    },
+    roomTypes: {
+      riverView: 'River View Room',
+      standardView: 'Standard View Room',
+      cottage: 'Cottage Room',
+    },
+    bedTypes: {
+      doubleBed: 'Double Bed',
+      twinBed: 'Twin Bed',
+    },
   },
   th: {
     login: {
@@ -231,6 +240,15 @@ export const translations: Translations = {
         transfer: 'เงินโอน',
         thbDate: 'บาท, วันที่',
         authorizedSignature: 'ผู้มีอำจลงนาม'
-    }
+    },
+    roomTypes: {
+      riverView: 'ห้องพักวิวแม่น้ำ',
+      standardView: 'ห้องพักสแตนดาร์ด',
+      cottage: 'ห้องพักบ้านไม้',
+    },
+    bedTypes: {
+      doubleBed: 'เตียงเดี่ยว',
+      twinBed: 'เตียงคู่',
+    },
   },
 };
