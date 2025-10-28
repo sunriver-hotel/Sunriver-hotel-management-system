@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { db } from '@vercel/postgres';
+import { db } from '../utils/db';
 
 export default async function handler(
   req: VercelRequest,
@@ -13,8 +13,8 @@ export default async function handler(
                     b.booking_id as "id",
                     b.customer_id as "customerId",
                     b.room_id as "roomId",
-                    b.check_in_date as "checkInDate",
-                    b.check_out_date as "checkOutDate",
+                    TO_CHAR(b.check_in_date, 'YYYY-MM-DD') as "checkInDate",
+                    TO_CHAR(b.check_out_date, 'YYYY-MM-DD') as "checkOutDate",
                     b.status,
                     b.price_per_night as "pricePerNight",
                     b.deposit,
@@ -32,71 +32,84 @@ export default async function handler(
         }
         else if (req.method === 'POST') {
             await client.query('BEGIN');
-            const { customerName, phone, email, address, taxId, ...bookingData } = req.body;
-            
-            let customerResult = await client.sql`SELECT customer_id FROM Customers WHERE phone = ${phone};`;
-            let customerId;
+            const { 
+                customerName, phone, email, address, taxId, 
+                roomId, checkInDate, checkOutDate, status, pricePerNight, deposit 
+            } = req.body;
 
-            if (customerResult.rows.length > 0) {
-                customerId = customerResult.rows[0].customer_id;
-                // Optionally update customer info if they already exist
-                 await client.sql`
-                    UPDATE Customers SET customer_name = ${customerName}, email = ${email || null}, address = ${address || null}, tax_id = ${taxId || null}
-                    WHERE customer_id = ${customerId};
-                `;
-            } else {
-                customerResult = await client.sql`
-                    INSERT INTO Customers (customer_name, phone, email, address, tax_id)
-                    VALUES (${customerName}, ${phone}, ${email || null}, ${address || null}, ${taxId || null})
-                    RETURNING customer_id;
-                `;
-                customerId = customerResult.rows[0].customer_id;
-            }
-
-            const dateStr = bookingData.checkInDate.replace(/-/g, '');
-            const uniquePart = Math.random().toString(36).substring(2, 7).toUpperCase();
-            const bookingId = `SRH-${dateStr}-${uniquePart}`;
-            
-            const { roomId, checkInDate, checkOutDate, status, pricePerNight, deposit } = bookingData;
-            const newBookingResult = await client.sql`
-                INSERT INTO Bookings (booking_id, customer_id, room_id, check_in_date, check_out_date, status, price_per_night, deposit)
-                VALUES (${bookingId}, ${customerId}, ${roomId}, ${checkInDate}, ${checkOutDate}, ${status}, ${pricePerNight}, ${deposit})
-                RETURNING booking_id, created_at;
+            // 1. Insert customer
+            const customerResult = await client.sql`
+                INSERT INTO Customers (customer_name, phone, email, address, tax_id)
+                VALUES (${customerName}, ${phone}, ${email || null}, ${address || null}, ${taxId || null})
+                RETURNING customer_id;
             `;
+            const customerId = customerResult.rows[0].customer_id;
 
+            // 2. Insert booking
+            const bookingResult = await client.sql`
+                INSERT INTO Bookings (customer_id, room_id, check_in_date, check_out_date, status, price_per_night, deposit)
+                VALUES (${customerId}, ${roomId}, ${checkInDate}, ${checkOutDate}, ${status}, ${pricePerNight}, ${deposit})
+                RETURNING booking_id as "id";
+            `;
+            
             await client.query('COMMIT');
 
-            return res.status(201).json({ id: newBookingResult.rows[0].booking_id });
+            return res.status(201).json({ id: bookingResult.rows[0].id, message: 'Booking created successfully' });
 
         } else if (req.method === 'PUT') {
             await client.query('BEGIN');
-            const bookingId = req.query.id as string;
-            const { customerName, phone, email, address, taxId, customerId, ...bookingData } = req.body;
-            
+            const { id } = req.query;
+            const { 
+                customerName, phone, email, address, taxId, 
+                roomId, checkInDate, checkOutDate, status, pricePerNight, deposit, customerId
+            } = req.body;
+
+            if (!id || !customerId) {
+                return res.status(400).json({ message: 'Booking ID and Customer ID are required' });
+            }
+
+            // 1. Update customer details
             await client.sql`
                 UPDATE Customers
-                SET customer_name = ${customerName}, phone = ${phone}, email = ${email || null}, address = ${address || null}, tax_id = ${taxId || null}
+                SET 
+                    customer_name = ${customerName},
+                    phone = ${phone},
+                    email = ${email || null},
+                    address = ${address || null},
+                    tax_id = ${taxId || null}
                 WHERE customer_id = ${customerId};
             `;
-            
-            const { roomId, checkInDate, checkOutDate, status, pricePerNight, deposit } = bookingData;
-            await client.sql`
+
+            // 2. Update booking details
+            const { rows } = await client.sql`
                 UPDATE Bookings
-                SET room_id = ${roomId}, check_in_date = ${checkInDate}, check_out_date = ${checkOutDate}, status = ${status}, price_per_night = ${pricePerNight}, deposit = ${deposit}
-                WHERE booking_id = ${bookingId};
+                SET
+                    room_id = ${roomId},
+                    check_in_date = ${checkInDate},
+                    check_out_date = ${checkOutDate},
+                    status = ${status},
+                    price_per_night = ${pricePerNight},
+                    deposit = ${deposit}
+                WHERE booking_id = ${id as string}
+                RETURNING booking_id as "id";
             `;
+
+            if (rows.length === 0) {
+                 await client.query('ROLLBACK');
+                return res.status(404).json({ message: 'Booking not found.' });
+            }
 
             await client.query('COMMIT');
 
-            return res.status(200).json({ success: true, id: bookingId });
+            return res.status(200).json(rows[0]);
         }
         else {
             res.setHeader('Allow', ['GET', 'POST', 'PUT']);
             return res.status(405).end(`Method ${req.method} Not Allowed`);
         }
-    } catch(e) {
+    } catch (error) {
         await client.query('ROLLBACK');
-        const errorMessage = e instanceof Error ? e.message : 'An unknown database error occurred.';
+        const errorMessage = error instanceof Error ? error.message : 'An unknown database error occurred.';
         return res.status(500).json({ error: errorMessage });
     } finally {
         client.release();

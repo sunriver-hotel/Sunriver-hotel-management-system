@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useLanguage } from '../hooks/useLanguage';
 import type { Language } from '../types';
@@ -20,8 +21,8 @@ const LanguageButton: React.FC<{ lang: Language; currentLang: Language; setLang:
 
 
 const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('admin2');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { language, setLanguage, t } = useLanguage();
@@ -71,7 +72,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-sunriver-yellow"
-              placeholder="admin"
+              placeholder={t('login.username')}
             />
           </div>
           <div className="mb-6">
@@ -84,7 +85,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline focus:ring-2 focus:ring-sunriver-yellow"
-              placeholder="admin2"
+              placeholder={t('login.password')}
             />
           </div>
           {error && <p className="text-red-500 text-xs italic mb-4">{error}</p>}
