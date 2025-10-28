@@ -39,16 +39,24 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         },
         body: JSON.stringify({ username, password }),
       });
-      
-      const data = await response.json();
 
       if (response.ok) {
         onLogin();
       } else {
-        setError(data.message || t('login.invalidCredentials'));
+        let errorMessage = t('login.invalidCredentials');
+        try {
+            // Attempt to get a more specific error message from the API response
+            const data = await response.json();
+            errorMessage = data.error || data.message || `Server responded with status: ${response.status}`;
+        } catch (jsonError) {
+            // If the response is not JSON, use the status text
+            errorMessage = `Server error: ${response.status} ${response.statusText}`;
+        }
+        setError(errorMessage);
       }
     } catch (err) {
-      setError('Failed to connect to the server.');
+      // This catch block typically handles network errors (e.g., server is down)
+      setError('Network error: Failed to connect to the server. Please check your connection.');
     } finally {
       setIsLoading(false);
     }

@@ -37,6 +37,14 @@ export default async function handler(
                 roomId, checkInDate, checkOutDate, status, pricePerNight, deposit 
             } = req.body;
 
+            // Generate a unique booking ID in the format SRH-YYYYMMDD-XXXXXX
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const randomPart = Math.random().toString(36).substring(2, 8).toUpperCase();
+            const bookingId = `SRH-${yyyy}${mm}${dd}-${randomPart}`;
+
             // 1. Insert customer
             const customerResult = await client.sql`
                 INSERT INTO Customers (customer_name, phone, email, address, tax_id)
@@ -45,16 +53,15 @@ export default async function handler(
             `;
             const customerId = customerResult.rows[0].customer_id;
 
-            // 2. Insert booking
-            const bookingResult = await client.sql`
-                INSERT INTO Bookings (customer_id, room_id, check_in_date, check_out_date, status, price_per_night, deposit)
-                VALUES (${customerId}, ${roomId}, ${checkInDate}, ${checkOutDate}, ${status}, ${pricePerNight}, ${deposit})
-                RETURNING booking_id as "id";
+            // 2. Insert booking with the generated ID
+            await client.sql`
+                INSERT INTO Bookings (booking_id, customer_id, room_id, check_in_date, check_out_date, status, price_per_night, deposit)
+                VALUES (${bookingId}, ${customerId}, ${roomId}, ${checkInDate}, ${checkOutDate}, ${status}, ${pricePerNight}, ${deposit});
             `;
             
             await client.query('COMMIT');
 
-            return res.status(201).json({ id: bookingResult.rows[0].id, message: 'Booking created successfully' });
+            return res.status(201).json({ id: bookingId, message: 'Booking created successfully' });
 
         } else if (req.method === 'PUT') {
             await client.query('BEGIN');
