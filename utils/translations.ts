@@ -1,3 +1,4 @@
+
 import type { Translations } from '../types';
 
 export const translations: Translations = {
@@ -115,6 +116,17 @@ export const translations: Translations = {
         transfer: 'Transfer',
         thbDate: 'THB, Date.',
         authorizedSignature: 'Authorized Signature'
+    },
+    healthCheck: {
+      title: 'Connection Health Check',
+      checking: 'Checking server and database connection...',
+      proceed: 'Proceed to Login',
+      troubleshootingTitle: 'Troubleshooting Steps:',
+      troubleshooting1: 'If the error mentions `POSTGRES_URL`, please double-check this environment variable in your Vercel project settings.',
+      troubleshooting2: 'Ensure the connection string is copied exactly from your Neon dashboard.',
+      troubleshooting3: 'After setting the environment variable, you **must redeploy** your project for the change to take effect.',
+      troubleshooting4: 'Check your Vercel deployment logs for more detailed error messages.',
+      fetchError: 'Failed to connect to the server. Is it running? Please check your deployment logs.'
     },
     roomTypes: {
       riverView: 'River View Room',
@@ -240,6 +252,17 @@ export const translations: Translations = {
         transfer: 'เงินโอน',
         thbDate: 'บาท, วันที่',
         authorizedSignature: 'ผู้มีอำจลงนาม'
+    },
+    healthCheck: {
+      title: 'ตรวจสอบสถานะการเชื่อมต่อ',
+      checking: 'กำลังตรวจสอบการเชื่อมต่อเซิร์ฟเวอร์และฐานข้อมูล...',
+      proceed: 'ไปที่หน้าล็อกอิน',
+      troubleshootingTitle: 'ขั้นตอนการแก้ไขปัญหา:',
+      troubleshooting1: 'หากข้อผิดพลาดกล่าวถึง `POSTGRES_URL` กรุณาตรวจสอบ Environment Variable นี้อีกครั้งในการตั้งค่าโปรเจกต์ Vercel ของคุณ',
+      troubleshooting2: 'ตรวจสอบให้แน่ใจว่าได้คัดลอก Connection String มาจาก Neon Dashboard อย่างถูกต้องครบถ้วน',
+      troubleshooting3: 'หลังจากตั้งค่า Environment Variable แล้ว คุณ**ต้องทำการ Redeploy** โปรเจกต์เพื่อให้การเปลี่ยนแปลงมีผล',
+      troubleshooting4: 'ตรวจสอบ Vercel deployment logs เพื่อดูข้อความข้อผิดพลาดที่ละเอียดมากขึ้น',
+      fetchError: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ เซิร์ฟเวอร์ทำงานอยู่หรือไม่? กรุณาตรวจสอบ deployment logs'
     },
     roomTypes: {
       riverView: 'ห้องพักวิวแม่น้ำ',
