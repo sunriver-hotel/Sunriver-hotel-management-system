@@ -9,12 +9,10 @@ import DashboardPage from './pages/Dashboard';
 import CleaningPage from './pages/Cleaning';
 import ReceiptPage from './pages/Receipt';
 import Sidebar from './components/Sidebar';
-import HealthCheckPage from './pages/HealthCheck';
 
 export type Page = 'Home' | 'RoomStatus' | 'Dashboard' | 'Cleaning' | 'Receipt';
 
 const App: React.FC = () => {
-  const [isHealthChecked, setIsHealthChecked] = useState<boolean>(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<Page>('Home');
 
@@ -44,29 +42,19 @@ const App: React.FC = () => {
     }
   };
 
-  const renderApp = () => {
-    if (!isHealthChecked) {
-      return <HealthCheckPage onSuccess={() => setIsHealthChecked(true)} />;
-    }
-    
-    if (!isAuthenticated) {
-      return <LoginPage onLogin={handleLogin} />;
-    }
-
-    return (
-      <div className="flex flex-col h-screen bg-pastel-bg text-sunriver-blue">
-        <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={handleLogout} />
-        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
-          {renderPage()}
-        </main>
-      </div>
-    );
-  };
-
   return (
     <LanguageProvider>
       <AppProvider>
-        {renderApp()}
+        {!isAuthenticated ? (
+          <LoginPage onLogin={handleLogin} />
+        ) : (
+          <div className="flex flex-col h-screen bg-pastel-bg text-sunriver-blue">
+            <Sidebar currentPage={currentPage} setCurrentPage={setCurrentPage} onLogout={handleLogout} />
+            <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+              {renderPage()}
+            </main>
+          </div>
+        )}
       </AppProvider>
     </LanguageProvider>
   );
